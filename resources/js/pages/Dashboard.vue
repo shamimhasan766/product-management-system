@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard} from '@/routes';
+import { router } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import * as Inertia from '@inertiajs/core';
 import {
     Table,
     TableBody,
@@ -43,48 +45,24 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 const isDialogOpen = ref(false);
-const products = ref([
-    {
-        id: 'PRD001',
-        name: 'Wireless Mouse',
-        category: 'Electronics',
-        status: 'Active',
-        price: 29.99,
-        stock: 145,
-    },
-    {
-        id: 'PRD002',
-        name: 'Mechanical Keyboard',
-        category: 'Electronics',
-        status: 'Active',
-        price: 89.99,
-        stock: 67,
-    },
-    {
-        id: 'PRD003',
-        name: 'USB-C Hub',
-        category: 'Accessories',
-        status: 'Active',
-        price: 49.99,
-        stock: 203,
-    },
-    {
-        id: 'PRD004',
-        name: 'Laptop Stand',
-        category: 'Accessories',
-        status: 'Inactive',
-        price: 39.99,
-        stock: 0,
-    },
-    {
-        id: 'PRD005',
-        name: 'Webcam HD',
-        category: 'Electronics',
-        status: 'Active',
-        price: 79.99,
-        stock: 89,
-    },
-]);
+const props = defineProps<{
+    products: {
+        data: Array<{
+            id: string;
+            name: string;
+            sku: string;
+            price: number;
+            stock: number;
+            image_url: number;
+        }>;
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+        links: Array<{ url: string | null; label: string; active: boolean }>;
+    };
+}>();
+console.log(props.products)
 const form = useForm({
   name: '',
   sku: '',
@@ -100,6 +78,7 @@ const addProduct = () => {
         onSuccess: () => {
             form.reset()
             isDialogOpen.value = false
+            Inertia.reload({ only: ['products'] });
         },
     })
 };
@@ -116,7 +95,6 @@ const addProduct = () => {
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="text-2xl font-bold tracking-tight">Products</h2>
-                    <p class="text-muted-foreground">Manage your product inventory</p>
                 </div>
                <Dialog v-model:open="isDialogOpen">
                     <DialogTrigger as-child>
@@ -188,6 +166,7 @@ const addProduct = () => {
                                     id="image"
                                     type="file"
                                     @change="form.image = $event.target.files[0]"
+                                    accept="image/*"
                                 />
                                 <p v-if="form.errors.image" class="text-red-600 text-sm">
                                     {{ form.errors.image }}
@@ -210,26 +189,28 @@ const addProduct = () => {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead class="w-[100px]">ID</TableHead>
+                            <TableHead class="w-[100px]">#</TableHead>
+                            <TableHead>Image</TableHead>
                             <TableHead>Name</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>SKU</TableHead>
                             <TableHead class="text-right">Price</TableHead>
                             <TableHead class="text-right">Stock</TableHead>
                             <TableHead class="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow v-for="product in products" :key="product.id">
-                            <TableCell class="font-medium">{{ product.id }}</TableCell>
+                        <TableRow v-for="(product, index) in props.products.data" :key="product.id">
+                            <TableCell class="font-medium">{{ (props.products.current_page - 1) * props.products.per_page + index + 1 }}</TableCell>
                             <TableCell>{{ product.name }}</TableCell>
-                            <TableCell>{{ product.category }}</TableCell>
                             <TableCell>
-                                <Badge :variant="product.status === 'Active' ? 'default' : 'secondary'">
-                                    {{ product.status }}
-                                </Badge>
+                                <img
+                                    :src="product.image_url"
+                                    alt="Product Image"
+                                    class="h-12 w-12 rounded-md object-cover"
+                                />
                             </TableCell>
-                            <TableCell class="text-right">${{ product.price.toFixed(2) }}</TableCell>
+                            <TableCell>{{ product.sku }}</TableCell>
+                            <TableCell class="text-right">{{ product.price }}</TableCell>
                             <TableCell class="text-right">{{ product.stock }}</TableCell>
                             <TableCell class="text-right">
                                 <DropdownMenu>
@@ -240,7 +221,6 @@ const addProduct = () => {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem>Edit</DropdownMenuItem>
-                                        <DropdownMenuItem>Duplicate</DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem class="text-destructive">
                                             Delete
@@ -251,6 +231,25 @@ const addProduct = () => {
                         </TableRow>
                     </TableBody>
                 </Table>
+                <div class="mt-4 flex justify-end py-5">
+                    <nav class="flex items-center space-x-1">
+                        <button
+                            v-for="(link, i) in props.products.links"
+                            :key="i"
+                            @click="link.url && router.visit(link.url)"
+                            v-html="link.label"
+                            :disabled="!link.url"
+                            :class="[
+                                'px-3 py-1 rounded border',
+                                link.active
+                                    ? 'bg-gray-800 text-white'
+                                    : 'bg-white text-gray-700 hover:bg-gray-100',
+                                !link.url ? 'opacity-50 cursor-not-allowed' : ''
+                            ]"
+                        />
+                    </nav>
+                </div>
+
             </div>
         </div>
     </AppLayout>

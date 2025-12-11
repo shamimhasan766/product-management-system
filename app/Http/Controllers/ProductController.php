@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use App\Services\ProductService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,7 +16,10 @@ class ProductController extends Controller
     }
 
     public function index(){
-        return Inertia::render('Dashboard');
+        $products = Product::select('id', 'name', 'sku', 'image', 'price', 'stock', 'created_at')->latest()->paginate(10);
+        return Inertia::render('Dashboard', [
+        'products' => $products
+    ]);
     }
 
     public function store(Request $request){
