@@ -1,100 +1,113 @@
 <script setup lang="ts">
-import AppLayout from '@/layouts/AppLayout.vue';
-import { dashboard} from '@/routes';
-import { router } from '@inertiajs/vue3';
-import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
-import * as Inertia from '@inertiajs/core';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Plus, MoreHorizontal } from 'lucide-vue-next';
-import { useForm } from '@inertiajs/vue3'
-import { route } from 'ziggy-js';
+    import AppLayout from '@/layouts/AppLayout.vue';
+    import { dashboard} from '@/routes';
+    import { router } from '@inertiajs/vue3';
+    import { type BreadcrumbItem } from '@/types';
+    import { Head } from '@inertiajs/vue3';
+    import { ref } from 'vue';
+    import * as Inertia from '@inertiajs/core';
+    import {
+        Table,
+        TableBody,
+        TableCell,
+        TableHead,
+        TableHeader,
+        TableRow,
+    } from '@/components/ui/table';
+    import {
+        Dialog,
+        DialogContent,
+        DialogDescription,
+        DialogFooter,
+        DialogHeader,
+        DialogTitle,
+        DialogTrigger,
+    } from '@/components/ui/dialog';
+    import { Input } from '@/components/ui/input';
+    import { Label } from '@/components/ui/label';
+    import { Button } from '@/components/ui/button';
+    import {
+        DropdownMenu,
+        DropdownMenuContent,
+        DropdownMenuItem,
+        DropdownMenuSeparator,
+        DropdownMenuTrigger,
+    } from '@/components/ui/dropdown-menu';
+    import { Plus, MoreHorizontal } from 'lucide-vue-next';
+    import { useForm } from '@inertiajs/vue3'
+    import { route } from 'ziggy-js';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard().url,
-    },
-];
-const isDialogOpen = ref(false);
-const props = defineProps<{
-    products: {
-        data: Array<{
-            id: string;
-            name: string;
-            sku: string;
-            price: number;
-            stock: number;
-            image_url: number;
-        }>;
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
-        links: Array<{ url: string | null; label: string; active: boolean }>;
-    };
-}>();
-console.log(props.products)
-const form = useForm({
-  name: '',
-  sku: '',
-  price: '',
-  stock: '',
-  image: null,
-})
-
-
-const addProduct = () => {
-    form.post(route('products.store'), {
-        forceFormData: true,
-        onSuccess: () => {
-            form.reset()
-            isDialogOpen.value = false
-            Inertia.reload({ only: ['products'] });
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard().url,
         },
+    ];
+    const isDialogOpen = ref(false);
+    const search = ref('');
+    const props = defineProps<{
+        products: {
+            data: Array<{
+                id: string;
+                name: string;
+                sku: string;
+                price: number;
+                stock: number;
+                image_url: number;
+            }>;
+            current_page: number;
+            last_page: number;
+            per_page: number;
+            total: number;
+            links: Array<{ url: string | null; label: string; active: boolean }>;
+        };
+    }>();
+    console.log(props.products)
+    const form = useForm({
+    name: '',
+    sku: '',
+    price: '',
+    stock: '',
+    image: null,
     })
-};
+
+    const searchProducts = () => {
+        router.get(route('dashboard'), { search: search.value }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
 
 
-
+    const addProduct = () => {
+        form.post(route('products.store'), {
+            forceFormData: true,
+            onSuccess: () => {
+                form.reset()
+                isDialogOpen.value = false
+                Inertia.reload({ only: ['products'] });
+            },
+        })
+    };
 </script>
 
 <template>
     <Head title="Dashboard" />
 
-     <AppLayout :breadcrumbs="breadcrumbs">
+    <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
             <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-2xl font-bold tracking-tight">Products</h2>
+                <div class="flex gap-2">
+                    <Input
+                        id="search"
+                        v-model="search"
+                        placeholder="Search by name and SKU"
+                        @keyup.enter="searchProducts"
+                    />
+                    <Button @click="searchProducts" variant="destructive">
+                       Search
+                    </Button>
+                    <!-- <h2 class="text-2xl font-bold tracking-tight">Products</h2> -->
                 </div>
                <Dialog v-model:open="isDialogOpen">
                     <DialogTrigger as-child>
@@ -201,7 +214,6 @@ const addProduct = () => {
                     <TableBody>
                         <TableRow v-for="(product, index) in props.products.data" :key="product.id">
                             <TableCell class="font-medium">{{ (props.products.current_page - 1) * props.products.per_page + index + 1 }}</TableCell>
-                            <TableCell>{{ product.name }}</TableCell>
                             <TableCell>
                                 <img
                                     :src="product.image_url"
@@ -209,6 +221,7 @@ const addProduct = () => {
                                     class="h-12 w-12 rounded-md object-cover"
                                 />
                             </TableCell>
+                            <TableCell>{{ product.name }}</TableCell>
                             <TableCell>{{ product.sku }}</TableCell>
                             <TableCell class="text-right">{{ product.price }}</TableCell>
                             <TableCell class="text-right">{{ product.stock }}</TableCell>

@@ -15,8 +15,17 @@ class ProductController extends Controller
         $this->productService = $productService;
     }
 
-    public function index(){
-        $products = Product::select('id', 'name', 'sku', 'image', 'price', 'stock', 'created_at')->latest()->paginate(10);
+    public function index(Request $request){
+        $products = Product::select('id', 'name', 'sku', 'image', 'price', 'stock', 'created_at')
+                     ->when($request->search, function ($query) use ($request) {
+                        $search = $request->search;
+                        $query->where(function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('sku', 'like', "%{$search}%");
+                        });
+                    })
+                    ->latest()
+                    ->paginate(10);
         return Inertia::render('Dashboard', [
         'products' => $products
     ]);
