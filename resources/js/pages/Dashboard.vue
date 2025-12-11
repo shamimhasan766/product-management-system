@@ -45,6 +45,7 @@
     ];
     const isDialogOpen = ref(false);
     const search = ref('');
+    const editingProduct = ref(null);
     const props = defineProps<{
         products: {
             data: Array<{
@@ -62,7 +63,6 @@
             links: Array<{ url: string | null; label: string; active: boolean }>;
         };
     }>();
-    console.log(props.products)
     const form = useForm({
     name: '',
     sku: '',
@@ -78,16 +78,39 @@
         });
     };
 
+    const openEditModal = (product) => {
+        editingProduct.value = product.id;
+        isDialogOpen.value = true;
 
-    const addProduct = () => {
-        form.post(route('products.store'), {
-            forceFormData: true,
-            onSuccess: () => {
-                form.reset()
-                isDialogOpen.value = false
-                Inertia.reload({ only: ['products'] });
-            },
-        })
+        form.name = product.name;
+        form.sku = product.sku;
+        form.price = product.price;
+        form.stock = product.stock;
+        form.image = null;
+    };
+
+
+    const handleSubmit = () => {
+        if (editingProduct.value) {
+            form.post(route('products.update', editingProduct.value), {
+                forceFormData: true,
+                onSuccess: () => {
+                    form.reset();
+                    editingProduct.value = null;
+                    isDialogOpen.value = false;
+                    Inertia.reload({ only: ['products'] });
+                },
+            });
+        } else {
+            form.post(route('products.store'), {
+                forceFormData: true,
+                onSuccess: () => {
+                    form.reset()
+                    isDialogOpen.value = false
+                    Inertia.reload({ only: ['products'] });
+                },
+            })
+        }
     };
 </script>
 
@@ -190,9 +213,10 @@
                             <Button variant="outline" @click="isDialogOpen = false">
                                 Cancel
                             </Button>
-                            <Button @click="addProduct">
-                                Add Product
+                            <Button @click="handleSubmit">
+                                Submit
                             </Button>
+
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -233,7 +257,7 @@
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                                        <DropdownMenuItem @click="openEditModal(product)">Edit</DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem class="text-destructive">
                                             Delete

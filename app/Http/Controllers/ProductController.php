@@ -46,4 +46,20 @@ class ProductController extends Controller
 
         return back()->with('success', 'Product created successfully!');
     }
+
+    public function update(Request $request, Product $product){
+        $validated = $request->validate([
+            'name'  => 'required|string',
+            'sku'   => ['required', 'unique:products,sku,' . $product->id, 'regex:/^\S+$/'],
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ],[
+            'sku.regex' => "SKU should not have space"
+        ]);
+
+        $this->productService->updateProduct($product, $validated);
+        
+        return back()->with('success', 'Product updated successfully!');
+    }
 }
