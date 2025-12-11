@@ -46,6 +46,8 @@
     const isDialogOpen = ref(false);
     const search = ref('');
     const editingProduct = ref(null);
+    const productToDelete = ref(null);
+    const isDeleteDialogOpen = ref(false);
     const props = defineProps<{
         products: {
             data: Array<{
@@ -110,6 +112,23 @@
                     Inertia.reload({ only: ['products'] });
                 },
             })
+        }
+    };
+
+    const openDeleteModal = (product) => {
+        productToDelete.value = product;
+        isDeleteDialogOpen.value = true;
+    };
+
+    const confirmDelete = () => {
+        if (productToDelete.value) {
+            router.delete(route('products.delete', productToDelete.value.id), {
+                onSuccess: () => {
+                    isDeleteDialogOpen.value = false;
+                    productToDelete.value = null;
+                    Inertia.reload({ only: ['products'] });
+                },
+            });
         }
     };
 </script>
@@ -259,7 +278,7 @@
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem @click="openEditModal(product)">Edit</DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem class="text-destructive">
+                                        <DropdownMenuItem class="text-destructive" @click="openDeleteModal(product)">
                                             Delete
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -289,5 +308,26 @@
 
             </div>
         </div>
+        <!-- Delete Confirmation Dialog -->
+        <Dialog v-model:open="isDeleteDialogOpen">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Are you sure?</DialogTitle>
+                    <DialogDescription>
+                        This product
+                        <span v-if="productToDelete" class="font-semibold">"{{ productToDelete.name }}"</span>
+                        will delete from your inventory.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" @click="isDeleteDialogOpen = false">
+                        Cancel
+                    </Button>
+                    <Button variant="destructive" @click="confirmDelete">
+                        Delete
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </AppLayout>
 </template>

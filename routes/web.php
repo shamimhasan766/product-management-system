@@ -17,6 +17,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('products')->name('products.')->group(function () {
         Route::post('store', [ProductController::class, 'store'])->name('store');
         Route::post('update/{product}', [ProductController::class, 'update'])->name('update');
+        Route::delete('delete/{product}', [ProductController::class, 'delete'])->name('delete');
     });
 });
 

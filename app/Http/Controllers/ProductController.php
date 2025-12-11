@@ -59,7 +59,12 @@ class ProductController extends Controller
         ]);
 
         $this->productService->updateProduct($product, $validated);
-        
+
         return back()->with('success', 'Product updated successfully!');
+    }
+
+    public function delete(Product $product){
+        $product->delete();
+        return back()->with('success', 'Product deleted successfully!');
     }
 }
