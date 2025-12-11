@@ -27,8 +27,8 @@ class ProductController extends Controller
                     ->latest()
                     ->paginate(10);
         return Inertia::render('Dashboard', [
-        'products' => $products
-    ]);
+            'products' => $products
+        ]);
     }
 
     public function store(Request $request){
@@ -66,5 +66,32 @@ class ProductController extends Controller
     public function delete(Product $product){
         $product->delete();
         return back()->with('success', 'Product deleted successfully!');
+    }
+
+    public function trashed(Request $request){
+         $products = Product::onlyTrashed()
+                    ->select('id', 'name', 'sku', 'image', 'price', 'stock', 'created_at')
+                    ->when($request->search, function ($query) use ($request) {
+                        $search = $request->search;
+                        $query->where(function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('sku', 'like', "%{$search}%");
+                        });
+                    })
+                    ->orderByDesc('deleted_at')
+                    ->paginate(10);
+        return Inertia::render('Trashed', [
+            'products' => $products
+        ]);
+    }
+
+    public function restore($id){
+        $this->productService->restoreProduct($id);
+        return back()->with('success', 'Product restored successfully.');
+    }
+
+    public function permanent_delete($id){
+        $this->productService->forceDeleteProduct($id);
+        return back()->with('success', 'Product permanently deleted successfully.');
     }
 }

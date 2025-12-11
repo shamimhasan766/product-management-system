@@ -24,7 +24,7 @@ class ProductService {
             $filename = $data['sku'] . '_' . time() . '.' . $file->getClientOriginalExtension();
             $data['image'] = $file->storeAs('uploads/products', $filename);
 
-            if ($product->image && file_exists($product->image)) {
+            if ($product->image && file_exists(public_path($product->image))) {
                 unlink(public_path($product->image));
             }
         } else {
@@ -34,6 +34,27 @@ class ProductService {
         $product->update($data);
 
         return $product;
+    }
+
+    public function restoreProduct($id): string
+    {
+        $product = Product::withTrashed()->findOrFail($id);
+        $product->restore();
+
+        return 'Product restored';
+    }
+
+    public function forceDeleteProduct($id): string
+    {
+        $product = Product::withTrashed()->findOrFail($id);
+
+        if ($product->image && file_exists(public_path($product->image))) {
+            unlink(public_path($product->image));
+        }
+
+        $product->forceDelete();
+
+        return 'Product permanently deleted';
     }
 
 }
