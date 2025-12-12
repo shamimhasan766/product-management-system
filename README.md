@@ -2,7 +2,7 @@
 
 -- To install on locally first pc need installed php and composer 
 1. Clone the project and remove .example from .env.example if you dont have installed mysql than use sqlite
-2. run composer install , composer dump-autoload , npm install, npm run build, php artisan key:generate on terminal
+2. run composer install , composer dump-autoload , npm install, npm run build, php artisan key:generate, php artisan migrate on terminal
 3. run php artisan serve and you will see local link for preview.
 4. go to the link register with name, email, password and on the dashboard you will see product list and create update delete product. and the second tab you will see trashed products and can restore and permanent delete.
 
